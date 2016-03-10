@@ -15,9 +15,16 @@
  */
 package org.redisson.connection;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.redisson.client.ReconnectListener;
 import org.redisson.client.RedisClient;
@@ -39,7 +46,11 @@ public class ClientConnectionsEntry {
     private final Queue<RedisPubSubConnection> freeSubscribeConnections = new ConcurrentLinkedQueue<RedisPubSubConnection>();
     private final AtomicInteger freeSubscribeConnectionsCounter = new AtomicInteger();
 
-    private final Queue<RedisConnection> freeConnections = new ConcurrentLinkedQueue<RedisConnection>();
+//    private final Queue<RedisConnection> freeConnections = new ConcurrentLinkedQueue<RedisConnection>();
+    private final List<RedisConnection> freeConnections = new CopyOnWriteArrayList<RedisConnection>();
+    private final AtomicLong freeConnectionsPos = new AtomicLong();
+    private final AtomicInteger busyConnections = new AtomicInteger();
+    
     private final AtomicInteger freeConnectionsCounter = new AtomicInteger();
 
     public enum FreezeReason {MANAGER, RECONNECT, SYSTEM}
@@ -56,7 +67,7 @@ public class ClientConnectionsEntry {
     public ClientConnectionsEntry(RedisClient client, int poolMinSize, int poolMaxSize, int subscribePoolMinSize, int subscribePoolMaxSize,
             ConnectionManager connectionManager, NodeType serverMode) {
         this.client = client;
-        this.freeConnectionsCounter.set(poolMaxSize);
+        this.freeConnectionsCounter.set(poolMaxSize*limit);
         this.connectionManager = connectionManager;
         this.nodeType = serverMode;
         this.freeSubscribeConnectionsCounter.set(subscribePoolMaxSize);
@@ -127,13 +138,23 @@ public class ClientConnectionsEntry {
         freeConnectionsCounter.incrementAndGet();
     }
 
+    private int limit = 3;
+    
     public RedisConnection pollConnection() {
-        return freeConnections.poll();
+//        return freeConnections.poll();
+        int b = busyConnections.incrementAndGet();
+        if (b > freeConnections.size() * limit) {
+            return null;
+        }
+            long pos = Math.abs(freeConnectionsPos.incrementAndGet() % freeConnections.size());
+            RedisConnection c = freeConnections.get((int) pos);
+            return c;
     }
 
     public void releaseConnection(RedisConnection connection) {
         connection.setLastUsageTime(System.currentTimeMillis());
-        freeConnections.add(connection);
+        busyConnections.decrementAndGet();
+//        freeConnections.add(connection);
     }
 
     public Future<RedisConnection> connect() {
@@ -149,6 +170,8 @@ public class ClientConnectionsEntry {
                 RedisConnection conn = future.getNow();
                 log.debug("new connection created: {}", conn);
 
+                freeConnections.add(conn);
+                
                 addReconnectListener(connectionFuture, conn);
             }
 
