@@ -89,8 +89,8 @@ public class RedissonBlockingCache extends RedissonCache {
             map.fastPut(key, value);
         }
         if (blockedGet.get() != null) {
-            redisson.getTopic("redisson_release_get__{" + key + "}").publish(value);
-            redisson.getBucket("redisson_lock_get__{" + key + "}").delete();
+            redisson.getTopic("redisson_release_get__{" + getName()+'_'+ key + "}").publish(value);
+            redisson.getBucket("redisson_lock_get__{" + getName()+'_'+ key + "}").delete();
             blockedGet.remove();
         }
     }
