@@ -38,27 +38,56 @@ public class RedissonBlockingCacheManager extends RedissonSpringCacheManager {
 
 
     public RedissonBlockingCacheManager(RedissonClient redisson, Map<String, CacheConfig> config, Codec codec) {
-        this.redisson = redisson;
-        this.configMap = config;
-        this.codec = codec;
+        super( redisson, config, codec );
     }
+
+    /**
+     * Creates CacheManager supplied by Redisson instance
+     * and Cache config mapped by Cache name.
+     * <p/>
+     * Loads the config file from the class path, interpreting plain paths as class path resource names
+     * that include the package path (e.g. "mypackage/myresource.txt").
+     *
+     * @param redisson
+     * @param configLocation
+     */
+    public RedissonBlockingCacheManager(RedissonClient redisson, String configLocation) {
+        this(redisson, configLocation, null);
+    }
+
+    /**
+     * Creates CacheManager supplied by Redisson instance, Codec instance
+     * and Config location path.
+     * <p/>
+     * Each Cache instance share one Codec instance.
+     * <p/>
+     * Loads the config file from the class path, interpreting plain paths as class path resource names
+     * that include the package path (e.g. "mypackage/myresource.txt").
+     *
+     * @param redisson
+     * @param configLocation
+     * @param codec
+     */
+    public RedissonBlockingCacheManager(RedissonClient redisson, String configLocation, Codec codec) {
+        super(redisson, configLocation, codec);
+    }
+
 
     @Override
     public Cache getCache(String name) {
         CacheConfig config = configMap.get(name);
         if (config == null) {
-            config = new CacheConfig();
+            config = (configMap.get("default") != null ? configMap.get("default") :  new CacheConfig() );
             configMap.put(name, config);
-
             RMap<Object, Object> map = createMap(name);
-            return new RedissonBlockingCache(map);
+            return new RedissonBlockingCache(map,this.redisson);
         }
         if (config.getMaxIdleTime() == 0 && config.getTTL() == 0) {
             RMap<Object, Object> map = createMap(name);
-            return new RedissonBlockingCache(map);
+            return new RedissonBlockingCache(map,this.redisson);
         }
         RMapCache<Object, Object> map = createMapCache(name);
-        return new RedissonBlockingCache(map, config);
+        return new RedissonBlockingCache(map, config, this.redisson);
     }
 }
 

@@ -29,20 +29,25 @@ public class RedissonBlockingCache extends RedissonCache {
     ThreadLocal<Boolean> blockedGet = new ThreadLocal<Boolean>();
     RedissonClient redisson;
 
-    public RedissonBlockingCache(RMapCache<Object, Object> mapCache, CacheConfig config) {
+    public RedissonBlockingCache(RMapCache<Object, Object> mapCache, CacheConfig config)
+    {
         super(mapCache, config);
     }
 
-
     public RedissonBlockingCache(RMap<Object, Object> map) {
-        super( map);
+        this(map, null);
     }
 
-    public RedissonBlockingCache(RMapCache<Object, Object> mapCache, CacheConfig config, RedissonClient redissonCl) {
+    public RedissonBlockingCache(RMap<Object, Object> map, RedissonClient client) {
+        super( map );
+        this.redisson = client;
+    }
+
+    public RedissonBlockingCache(RMapCache<Object, Object> mapCache, CacheConfig config, RedissonClient client) {
 
         this(mapCache, config);
 
-        this.redisson = redissonCl;
+        this.redisson = client;
     }
 
 
