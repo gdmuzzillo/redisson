@@ -55,13 +55,13 @@ public class RedissonBlockingCache extends RedissonCache {
     public ValueWrapper get(Object key) {
         Object value = map.get(key);
         if (value == null) {
-            if (redisson.getBucket("redisson_lock_get__{" + key + "}").trySet(true)) {
+            if (redisson.getBucket("redisson_lock_get__{" + getName() + '_' + key  +"}").trySet(true)) {
                 blockedGet.set(true);
                 return null;
             } else {
                 final CountDownLatch latch = new CountDownLatch(1);
                 final AtomicReference<Object> valueRef = new AtomicReference<Object>();
-                redisson.getTopic("redisson_release_get__{" + key + "}").addListener(new MessageListener<Object>() {
+                redisson.getTopic("redisson_release_get__{" + getName()+'_'+ key + "}").addListener(new MessageListener<Object>() {
                     @Override
                     public void onMessage(String channel, Object value) {
                         valueRef.set(value);
