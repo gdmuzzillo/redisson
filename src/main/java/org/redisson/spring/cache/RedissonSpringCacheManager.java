@@ -42,15 +42,15 @@ import org.springframework.core.io.ResourceLoader;
  */
 public class RedissonSpringCacheManager implements CacheManager, ResourceLoaderAware, InitializingBean {
 
-    private ResourceLoader resourceLoader;
+    protected ResourceLoader resourceLoader;
 
-    private Codec codec;
+    protected Codec codec;
 
-    private RedissonClient redisson;
+    protected RedissonClient redisson;
 
-    private Map<String, CacheConfig> configMap = new HashMap<String, CacheConfig>();
+    protected Map<String, CacheConfig> configMap = new HashMap<String, CacheConfig>();
 
-    private String configLocation;
+    protected String configLocation;
 
     public RedissonSpringCacheManager() {
     }
@@ -168,14 +168,14 @@ public class RedissonSpringCacheManager implements CacheManager, ResourceLoaderA
         return new RedissonCache(map, config);
     }
 
-    private RMap<Object, Object> createMap(String name) {
+    protected RMap<Object, Object> createMap(String name) {
         if (codec != null) {
             return redisson.getMap(name, codec);
         }
         return redisson.getMap(name);
     }
 
-    private RMapCache<Object, Object> createMapCache(String name) {
+    protected RMapCache<Object, Object> createMapCache(String name) {
         if (codec != null) {
             return redisson.getMapCache(name, codec);
         }

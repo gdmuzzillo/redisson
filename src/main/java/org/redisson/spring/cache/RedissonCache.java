@@ -29,11 +29,11 @@ import org.springframework.cache.support.SimpleValueWrapper;
  */
 public class RedissonCache implements Cache {
 
-    private RMapCache<Object, Object> mapCache;
+    protected RMapCache<Object, Object> mapCache;
 
-    private final RMap<Object, Object> map;
+    protected final RMap<Object, Object> map;
 
-    private CacheConfig config;
+    protected CacheConfig config;
 
     public RedissonCache(RMapCache<Object, Object> mapCache, CacheConfig config) {
         this.mapCache = mapCache;
@@ -103,7 +103,7 @@ public class RedissonCache implements Cache {
         map.clear();
     }
 
-    private ValueWrapper toValueWrapper(Object value) {
+    protected ValueWrapper toValueWrapper(Object value) {
         if (value == null) {
             return null;
         }
